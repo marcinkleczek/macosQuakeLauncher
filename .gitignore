@@ -1,0 +1,10 @@
+# Materiał podpisujący — klucz prywatny Developer ID. Nigdy do repozytorium.
+signing/
+
+# Wyniki budowania (odtwarzalne przez ./build.sh)
+*.app/
+*.dmg
+tmp-rw.dmg
+
+# macOS
+.DS_Store
