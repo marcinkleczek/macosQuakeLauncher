@@ -762,7 +762,9 @@ enum QuaddictedIndex {
     static func stripTags(_ s: String) -> String {
         var out = s.replacingOccurrences(of: "<br>", with: "\n", options: .caseInsensitive)
         out = out.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
-        for (entity, char) in [("&amp;", "&"), ("&quot;", "\""), ("&lt;", "<"), ("&gt;", ">"), ("&#39;", "'")] {
+        // &#039; i &#39; to ta sama encja zapisana z zerem wiodącym i bez — SlipSeer używa pierwszej
+        for (entity, char) in [("&amp;", "&"), ("&quot;", "\""), ("&lt;", "<"), ("&gt;", ">"),
+                               ("&#039;", "'"), ("&#39;", "'"), ("&#8217;", "'"), ("&nbsp;", " ")] {
             out = out.replacingOccurrences(of: entity, with: char)
         }
         return out.trimmingCharacters(in: .whitespacesAndNewlines)
