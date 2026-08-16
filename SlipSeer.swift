@@ -20,6 +20,8 @@ struct SlipSeerResource: Identifiable, Hashable, Codable {
     var rating = 0.0
     var descriptionText = ""
     var detailLoaded = false
+    /// Data pobrania z rejestru — wstrzykiwana przy filtrowaniu, żeby tabela mogła sortować.
+    var installedAt: Date?
 
     var id: String { slug }
 
@@ -39,6 +41,13 @@ struct SlipSeerResource: Identifiable, Hashable, Codable {
     }
 
     var updatedSort: Date { updated ?? .distantPast }
+
+    var installedSort: Date { installedAt ?? .distantPast }
+
+    var installedText: String {
+        guard let installedAt else { return "—" }
+        return Self.day.string(from: installedAt)
+    }
 
     /// Kategorie SlipSeera, które nie są mapami do zainstalowania w katalogu gry.
     var isTooling: Bool {
@@ -149,6 +158,9 @@ final class SlipSeerModel: ObservableObject {
     func filtered(registry: InstallRegistry) -> [SlipSeerResource] {
         var result = resources
         if hideTooling { result = result.filter { !$0.isTooling } }
+        for i in result.indices {
+            result[i].installedAt = registry.entry(.slipseer, result[i].slug)?.installedAt
+        }
         let query = searchText.trimmingCharacters(in: .whitespaces).lowercased()
         if !query.isEmpty {
             result = result.filter {

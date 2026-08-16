@@ -340,10 +340,8 @@ final class LauncherModel: ObservableObject {
 
 struct ContentView: View {
     @ObservedObject var model: LauncherModel
-    @ObservedObject var moddb: ModDBModel
     @ObservedObject var registry: InstallRegistry
     @Environment(\.openWindow) private var openWindow
-    @State private var showModDB = false
 
     static let modLabels = [
         "id1": "id1 (bez moda)",
@@ -449,7 +447,7 @@ struct ContentView: View {
                         .font(.caption).foregroundStyle(.secondary)
                     Button("Quaddicted") { openWindow(id: "maps") }
                     Button("SlipSeer") { openWindow(id: "slipseer") }
-                    Button(showModDB ? "Ukryj ModDB" : "ModDB") { showModDB.toggle() }
+                    Button("ModDB") { openWindow(id: "moddb") }
                     Spacer()
                     Button("Pobrane") { openWindow(id: "library") }
                         .help("Wszystko, co pobrałeś — ze wszystkich źródeł, z datami.")
@@ -464,10 +462,6 @@ struct ContentView: View {
                         .buttonStyle(.borderedProminent)
                         .disabled(model.selectedEngine == nil)
                 }
-            }
-
-            if showModDB {
-                ModDBPanel(launcher: model, browser: moddb, registry: registry)
             }
 
             if !model.status.isEmpty {
@@ -1484,13 +1478,17 @@ struct QuakeLauncherApp: App {
 
     var body: some Scene {
         WindowGroup("Quake Launcher") {
-            ContentView(model: model, moddb: moddb, registry: registry)
+            ContentView(model: model, registry: registry)
                 .task { registry.migrateIfNeeded(base: model.baseDir) }
         }
         .windowResizability(.contentSize)
 
         Window("Mapy — Quaddicted", id: "maps") {
             MapBrowserView(launcher: model, browser: browser, registry: registry)
+        }
+
+        Window("ModDB", id: "moddb") {
+            ModDBBrowserView(launcher: model, browser: moddb, registry: registry)
         }
 
         Window("SlipSeer", id: "slipseer") {

@@ -116,9 +116,10 @@ struct SlipSeerView: View {
     @ObservedObject var registry: InstallRegistry
 
     @State private var selection: String?
+    @State private var sortOrder = [KeyPathComparator(\SlipSeerResource.updatedSort, order: .reverse)]
 
     private var rows: [SlipSeerResource] {
-        browser.filtered(registry: registry).sorted { $0.updatedSort > $1.updatedSort }
+        browser.filtered(registry: registry).sorted(using: sortOrder)
     }
 
     var body: some View {
@@ -136,8 +137,8 @@ struct SlipSeerView: View {
                 }
                 .padding([.top, .horizontal], 10)
 
-                Table(rows, selection: $selection) {
-                    TableColumn("Tytuł") { res in
+                Table(rows, selection: $selection, sortOrder: $sortOrder) {
+                    TableColumn("Tytuł", value: \.title) { res in
                         HStack(spacing: 4) {
                             if registry.isInstalled(.slipseer, res.slug) {
                                 Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
@@ -145,9 +146,15 @@ struct SlipSeerView: View {
                             Text(res.title.isEmpty ? res.name : res.title).lineLimit(1)
                         }
                     }
-                    TableColumn("Autor") { Text($0.author) }.width(120)
-                    TableColumn("Kategoria") { Text($0.category) }.width(130)
-                    TableColumn("Data") { Text($0.updatedText) }.width(90)
+                    .width(min: 200, ideal: 300)
+                    TableColumn("Autor", value: \.author) { Text($0.author).lineLimit(1) }.width(100)
+                    TableColumn("Kategoria", value: \.category) { Text($0.category).lineLimit(1) }.width(115)
+                    TableColumn("Data", value: \.updatedSort) { Text($0.updatedText) }.width(90)
+                    TableColumn("Pobrano", value: \.installedSort) { res in
+                        Text(res.installedText)
+                            .foregroundStyle(res.installedAt == nil ? .secondary : .primary)
+                    }
+                    .width(90)
                 }
 
                 HStack {
@@ -159,7 +166,7 @@ struct SlipSeerView: View {
                 }
                 .padding([.bottom, .horizontal], 10)
             }
-            .frame(minWidth: 460)
+            .frame(minWidth: 640)
 
             Group {
                 if let res = rows.first(where: { $0.slug == selection })
@@ -173,7 +180,7 @@ struct SlipSeerView: View {
             }
             .frame(minWidth: 300)
         }
-        .frame(minWidth: 900, minHeight: 520)
+        .frame(minWidth: 1020, minHeight: 520)
         .task { await browser.loadIfNeeded() }
     }
 
