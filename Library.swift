@@ -104,7 +104,9 @@ struct LibraryView: View {
 
     private func play(_ entry: InstallEntry) {
         // pojedyncza mapa startuje wprost; przy wielu wchodzimy w menu, bo nie wiadomo, od której zacząć
-        launcher.runGame(gameDir: entry.gameDir, map: entry.maps.count == 1 ? entry.maps[0] : nil)
+        launcher.runGame(gameDir: entry.gameDir,
+                         map: entry.maps.count == 1 ? entry.maps[0] : nil,
+                         baseMod: entry.requiresMod)
     }
 }
 

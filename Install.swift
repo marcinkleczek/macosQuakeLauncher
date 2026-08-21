@@ -30,6 +30,9 @@ struct InstallEntry: Codable, Identifiable, Hashable {
     var date: Double?
     var gameDir: String?
     var maps: [String] = []
+    /// Mod bazowy, na którym stoi ta paczka (tag `mod=` z Quaddicted: quoth, copper,
+    /// arcanedimensions). Bez niego mapa startuje bez potrzebnych progs.dat i modeli.
+    var requiresMod: String?
 
     var id: String { "\(source.rawValue):\(slug)" }
 
@@ -82,13 +85,15 @@ final class InstallRegistry: ObservableObject {
     /// Zapisuje fakt instalacji. Datę ustawiamy tylko przy pierwszym wpisie, żeby ponowne
     /// pobranie tej samej rzeczy nie skasowało informacji, kiedy pojawiła się u nas pierwotnie.
     func record(source: InstallSource, slug: String, title: String,
-                gameDir: String?, maps: [String], base: URL?, at date: Date = Date()) {
+                gameDir: String?, maps: [String], base: URL?,
+                requiresMod: String? = nil, at date: Date = Date()) {
         let key = "\(source.rawValue):\(slug)"
         var entry = entries[key] ?? InstallEntry(source: source, slug: slug, date: date.timeIntervalSince1970)
         if entry.date == nil { entry.date = date.timeIntervalSince1970 }
         if !title.isEmpty { entry.title = title }
         if let gameDir { entry.gameDir = gameDir }
         if !maps.isEmpty { entry.maps = maps }
+        if let requiresMod, !requiresMod.isEmpty { entry.requiresMod = requiresMod }
         entries[key] = entry
         save(base: base)
     }
@@ -118,6 +123,7 @@ final class InstallRegistry: ObservableObject {
             if current.title.isEmpty { current.title = incoming.title }
             if current.gameDir == nil { current.gameDir = incoming.gameDir }
             if current.maps.isEmpty { current.maps = incoming.maps }
+            if current.requiresMod == nil { current.requiresMod = incoming.requiresMod }
             entries[key] = current
         }
     }

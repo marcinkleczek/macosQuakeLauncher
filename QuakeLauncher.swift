@@ -197,12 +197,19 @@ final class LauncherModel: ObservableObject {
     /// Uruchamia grę w podanym katalogu gry. Jedno miejsce dla wszystkich źródeł —
     /// nazwa katalogu jest po drodze prostowana do rzeczywistej pisowni na dysku,
     /// a mission packi dostają swoje flagi zamiast -game.
-    func runGame(gameDir: String?, map: String? = nil, extraArgs: [String] = []) {
+    func runGame(gameDir: String?, map: String? = nil, baseMod: String? = nil, extraArgs: [String] = []) {
         guard let exec = selectedEngine?.execURL, let base = baseDir else {
             status = "Ustaw silnik i katalog Quake'a."
             return
         }
         var args = ["-basedir", base.path]
+        // Mod bazowy MUSI iść przed katalogiem mapy: silnik przegląda -game w kolejności
+        // podania (common.c, pętla COM_CheckParmNext), a późniejszy katalog przykrywa
+        // wcześniejszy. Odwrotna kolejność ładowałaby progs.dat moda zamiast mapy.
+        if let baseMod, let dir = baseModDir(for: baseMod),
+           dir.lowercased() != (gameDir ?? "").lowercased() {
+            args += ["-game", dir]
+        }
         if let gameDir, !gameDir.isEmpty {
             let game = actualGameDir(gameDir)
             switch game.lowercased() {
@@ -230,6 +237,25 @@ final class LauncherModel: ObservableObject {
         } catch {
             status = "Błąd uruchamiania: \(error.localizedDescription)"
         }
+    }
+
+    /// Katalog moda bazowego wymaganego przez paczkę. Quaddicted tagują go nazwą z bazy,
+    /// która nie zawsze odpowiada katalogowi na dysku — „arcanedimensions" leży w ad/,
+    /// a Rubicon Rumble Pack w rubicon2/. Zwracamy nil, gdy moda po prostu nie ma.
+    func baseModDir(for tag: String) -> String? {
+        guard let base = baseDir else { return nil }
+        let candidates: [String]
+        switch tag.lowercased() {
+        case "arcanedimensions", "ad": candidates = ["ad", "arcanedimensions"]
+        case "rubicon": candidates = ["rubicon2", "rubicon"]
+        case "progs_dump", "progsdump": candidates = ["progs_dump", "dump"]
+        default: candidates = [tag]
+        }
+        for candidate in candidates {
+            let actual = actualGameDir(candidate)
+            if PackageFS.looksLikeGameDir(base.appendingPathComponent(actual)) { return actual }
+        }
+        return nil
     }
 
     /// Czy w tym katalogu gry faktycznie da się coś odpalić.
@@ -992,6 +1018,27 @@ final class BrowserModel: ObservableObject {
         statusText = "Baza Quaddicted: \(parsed.count) pozycji."
     }
 
+    /// Uzupełnia rejestr o rzeczy, których dawniej nie zapisywaliśmy: wymagany mod bazowy
+    /// (tag `mod=`) i katalog gry. Bez tego mapa dla Quotha startowała na czystym Quake'u,
+    /// a okno „Pobrane" nie wiedziało, co uruchomić. Wywoływane po wczytaniu bazy — dopiero
+    /// wtedy znamy tagi paczek.
+    func backfillFromIndex(registry: InstallRegistry, launcher: LauncherModel) {
+        guard !packages.isEmpty, let base = launcher.baseDir else { return }
+        var touched = 0
+        for pkg in packages {
+            guard let entry = registry.entry(.quaddicted, pkg.id) else { continue }
+            let needsMod = entry.requiresMod == nil && pkg.requiredMod != nil
+            let needsDir = entry.gameDir == nil
+            guard needsMod || needsDir else { continue }
+            registry.record(source: .quaddicted, slug: pkg.id, title: entry.title.isEmpty ? pkg.title : entry.title,
+                            gameDir: needsDir ? playGameDir(pkg, launcher: launcher) : nil,
+                            maps: [], base: nil,
+                            requiresMod: needsMod ? pkg.requiredMod : nil)
+            touched += 1
+        }
+        if touched > 0 { registry.save(base: base) }
+    }
+
     // MARK: Instalacja
 
     /// Ścieżka instalacji względem katalogu bazowego wg <zipbasedir> z bazy Quaddicted
@@ -1115,7 +1162,8 @@ final class BrowserModel: ObservableObject {
             saveInstallHistory(launcher: launcher)
             registry.record(source: .quaddicted, slug: pkg.id, title: pkg.title,
                             gameDir: playGameDir(pkg, launcher: launcher),
-                            maps: bspNames.map { $0.lowercased() }, base: base)
+                            maps: bspNames.map { $0.lowercased() }, base: base,
+                            requiresMod: pkg.requiredMod)
             launcher.rescan()
             let where_ = installRelPath(pkg).map { $0.isEmpty ? "katalog bazowy" : "\($0)/" } ?? "\(pkg.id)/"
             statusText = "Zainstalowano \(pkg.title.isEmpty ? pkg.id : pkg.title) → \(where_)"
@@ -1215,12 +1263,20 @@ final class BrowserModel: ObservableObject {
         }
         var args = ["-basedir", base.path]
         var tokens = pkg.commandline.split(separator: " ").map(String.init)
+        // Mapa dla Quotha/Coppera/AD potrzebuje najpierw katalogu tego moda — inaczej
+        // startuje na czystym Quake'u i gubi progs.dat, modele i tekstury dodatku.
+        let gameDirForPkg = playGameDir(pkg, launcher: launcher)
+        if let need = pkg.requiredMod, let dir = launcher.baseModDir(for: need),
+           dir.lowercased() != (gameDirForPkg ?? "").lowercased(),
+           !tokens.contains(dir) {
+            args += ["-game", dir]
+        }
         // commandline z bazy niesie pisownię autora paczki — podmieniamy na tę z dysku
         if let i = tokens.firstIndex(of: "-game"), i + 1 < tokens.count {
             tokens[i + 1] = launcher.actualGameDir(tokens[i + 1])
         }
         args += tokens
-        if !tokens.contains("-game"), let game = playGameDir(pkg, launcher: launcher) {
+        if !tokens.contains("-game"), let game = gameDirForPkg {
             args += ["-game", game]
         }
         // ustawienia z okna launchera (commandline paczki ma pierwszeństwo)
@@ -1327,6 +1383,8 @@ struct MapBrowserView: View {
             browser.backfillInstallDates(launcher: launcher)
             browser.saveInstallHistory(launcher: launcher)
             await browser.loadIfNeeded()
+            // tagi paczek znamy dopiero po wczytaniu indeksu
+            browser.backfillFromIndex(registry: registry, launcher: launcher)
         }
     }
 }
