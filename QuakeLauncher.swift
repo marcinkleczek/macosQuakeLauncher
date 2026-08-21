@@ -197,19 +197,16 @@ final class LauncherModel: ObservableObject {
     /// Uruchamia grę w podanym katalogu gry. Jedno miejsce dla wszystkich źródeł —
     /// nazwa katalogu jest po drodze prostowana do rzeczywistej pisowni na dysku,
     /// a mission packi dostają swoje flagi zamiast -game.
-    func runGame(gameDir: String?, map: String? = nil, baseMod: String? = nil, extraArgs: [String] = []) {
+    func runGame(gameDir: String?, map: String? = nil, extraArgs: [String] = []) {
         guard let exec = selectedEngine?.execURL, let base = baseDir else {
             status = "Ustaw silnik i katalog Quake'a."
             return
         }
         var args = ["-basedir", base.path]
-        // Mod bazowy MUSI iść przed katalogiem mapy: silnik przegląda -game w kolejności
-        // podania (common.c, pętla COM_CheckParmNext), a późniejszy katalog przykrywa
-        // wcześniejszy. Odwrotna kolejność ładowałaby progs.dat moda zamiast mapy.
-        if let baseMod, let dir = baseModDir(for: baseMod),
-           dir.lowercased() != (gameDir ?? "").lowercased() {
-            args += ["-game", dir]
-        }
+        // Świadomie JEDEN -game. Silnik przyjmuje ich wiele, ale progs.dat bierze
+        // z ostatniego katalogu — mapa dla Quotha uruchomiona jako
+        // „-game quoth -game mapa" ładowała się bez logiki moda (setki „no spawn
+        // function"). Mapy dla modów i tak lądują w katalogu moda, więc wystarczy on sam.
         if let gameDir, !gameDir.isEmpty {
             let game = actualGameDir(gameDir)
             switch game.lowercased() {
@@ -256,6 +253,19 @@ final class LauncherModel: ObservableObject {
             if PackageFS.looksLikeGameDir(base.appendingPathComponent(actual)) { return actual }
         }
         return nil
+    }
+
+    /// Czy mod bazowy jest naprawdę zainstalowany, a nie reprezentowany przez sam katalog
+    /// z mapami. Katalog w rodzaju ad/ powstaje przy rozpakowaniu mapy dla Arcane Dimensions,
+    /// choć samego moda tam nie ma — Quaddicted nie hostuje dużych modów. Bez progs.dat albo
+    /// paka silnik wystartuje mapę bez logiki dodatku (setki „no spawn function").
+    func baseModInstalled(_ tag: String) -> Bool {
+        guard let base = baseDir, let dir = baseModDir(for: tag) else { return false }
+        let contents = (try? fm.contentsOfDirectory(atPath: base.appendingPathComponent(dir).path)) ?? []
+        return contents.contains { entry in
+            let name = entry.lowercased()
+            return name == "progs.dat" || name.hasSuffix(".pak") || name.hasSuffix(".pk3")
+        }
     }
 
     /// Czy w tym katalogu gry faktycznie da się coś odpalić.
@@ -1028,11 +1038,27 @@ final class BrowserModel: ObservableObject {
         for pkg in packages {
             guard let entry = registry.entry(.quaddicted, pkg.id) else { continue }
             let needsMod = entry.requiresMod == nil && pkg.requiredMod != nil
-            let needsDir = entry.gameDir == nil
-            guard needsMod || needsDir else { continue }
-            registry.record(source: .quaddicted, slug: pkg.id, title: entry.title.isEmpty ? pkg.title : entry.title,
-                            gameDir: needsDir ? playGameDir(pkg, launcher: launcher) : nil,
-                            maps: [], base: nil,
+            // Katalog gry ustalamy po tym, gdzie NAPRAWDĘ leżą pliki .bsp. Zgadywanie
+            // z zipbasedir mijało się z rzeczywistością: mapa dla Arcane Dimensions
+            // rozpakowuje się do ad/, a nie do katalogu o nazwie paczki.
+            let known = entry.gameDir.map { launcher.actualGameDir($0) }
+            let dirHasMaps = known.map {
+                PackageFS.looksLikeGameDir(base.appendingPathComponent($0))
+            } ?? false
+            var resolved: String?
+            if !dirHasMaps {
+                let names = entry.maps.isEmpty ? availableMaps(pkg) : entry.maps
+                let found = launcher.locateMaps(named: names,
+                                                preferredGame: playGameDir(pkg, launcher: launcher))
+                // katalog gry to ten dwa poziomy nad plikiem: <gra>/maps/<mapa>.bsp
+                resolved = found.first
+                    .map { $0.source.file.deletingLastPathComponent().deletingLastPathComponent() }
+                    .map { $0.lastPathComponent }
+            }
+            guard needsMod || resolved != nil else { continue }
+            registry.record(source: .quaddicted, slug: pkg.id,
+                            title: entry.title.isEmpty ? pkg.title : entry.title,
+                            gameDir: resolved, maps: [], base: nil,
                             requiresMod: needsMod ? pkg.requiredMod : nil)
             touched += 1
         }
@@ -1263,14 +1289,7 @@ final class BrowserModel: ObservableObject {
         }
         var args = ["-basedir", base.path]
         var tokens = pkg.commandline.split(separator: " ").map(String.init)
-        // Mapa dla Quotha/Coppera/AD potrzebuje najpierw katalogu tego moda — inaczej
-        // startuje na czystym Quake'u i gubi progs.dat, modele i tekstury dodatku.
         let gameDirForPkg = playGameDir(pkg, launcher: launcher)
-        if let need = pkg.requiredMod, let dir = launcher.baseModDir(for: need),
-           dir.lowercased() != (gameDirForPkg ?? "").lowercased(),
-           !tokens.contains(dir) {
-            args += ["-game", dir]
-        }
         // commandline z bazy niesie pisownię autora paczki — podmieniamy na tę z dysku
         if let i = tokens.firstIndex(of: "-game"), i + 1 < tokens.count {
             tokens[i + 1] = launcher.actualGameDir(tokens[i + 1])
@@ -1462,10 +1481,12 @@ struct PackageDetail: View {
                         }
                     }
                 }
-                if let mod = pkg.requiredMod, !launcher.mods.contains(mod) {
+                if let mod = pkg.requiredMod, !launcher.baseModInstalled(mod) {
                     // duże mody (Arcane Dimensions, Copper, Quoth) nie są hostowane
-                    // na Quaddicted — bazę trzeba zdobyć samemu
-                    Label("Działa na modzie \"\(mod)\" — nie ma go w katalogu gry, trzeba go doinstalować osobno.",
+                    // na Quaddicted — bazę trzeba zdobyć samemu. Sam katalog nie wystarczy:
+                    // tworzą go same mapy, a bez progs.dat mapa startuje bez logiki moda.
+                    Label("Wymaga moda \"\(mod)\" — w katalogu gry są tylko mapy, brakuje samego moda "
+                          + "(progs.dat/pak). Bez niego mapa uruchomi się bez logiki dodatku.",
                           systemImage: "exclamationmark.triangle")
                         .font(.caption).foregroundStyle(.orange)
                 }
