@@ -27,26 +27,25 @@ SIGN_FLAGS=()
 # minos równy aktualnemu macOS — niezależnie od tego, co deklarował Info.plist.
 DEPLOY_TARGET="${DEPLOY_TARGET:-15.0}"
 
-# build_app <exe> <plist> <źródła…>
+# build_app <exe> — źródła z Sources/<exe>/, Info.plist i ikona z Resources/<exe>/
 build_app() {
-  local exe=$1 plist=$2
-  shift 2
+  local exe=$1
   local app="$exe.app"
-  swiftc -O -parse-as-library -target "$(uname -m)-apple-macos$DEPLOY_TARGET" "$@" -o "$exe"
+  swiftc -O -parse-as-library -target "$(uname -m)-apple-macos$DEPLOY_TARGET" Sources/$exe/**/*.swift -o "$exe"
   rm -rf "$app"
   mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
-  cp "$plist" "$app/Contents/Info.plist"
-  cp "$exe.icns" "$app/Contents/Resources/"
+  cp "Resources/$exe/Info.plist" "$app/Contents/Info.plist"
+  cp "Resources/$exe/$exe.icns" "$app/Contents/Resources/"
   mv "$exe" "$app/Contents/MacOS/"
 }
 
-build_app QuakeLauncher Info.plist        QuakeLauncher.swift MapInfo.swift ModDB.swift SlipSeer.swift Install.swift Library.swift
-build_app QuakeConfig   Info-Config.plist QuakeConfig.swift
+build_app QuakeLauncher
+build_app QuakeConfig
 
 # shim wyboru monitora — uniwersalny, bo QuakeSpasm to x86_64 (Rosetta)
 clang -arch arm64 -arch x86_64 -dynamiclib -undefined dynamic_lookup -O2 \
   -mmacosx-version-min=$DEPLOY_TARGET \
-  displayshim.c -o QuakeLauncher.app/Contents/Resources/libdisplayshim.dylib
+  Sources/DisplayShim/displayshim.c -o QuakeLauncher.app/Contents/Resources/libdisplayshim.dylib
 
 codesign --force --sign "$SIGN_ID" "${SIGN_FLAGS[@]}" QuakeLauncher.app/Contents/Resources/libdisplayshim.dylib
 codesign --force --sign "$SIGN_ID" "${SIGN_FLAGS[@]}" QuakeLauncher.app
@@ -58,7 +57,7 @@ if [[ "$1" == "dist" ]]; then
 
   # tło okna (1x + 2x → TIFF Retina)
   BGDIR=$(mktemp -d)
-  swift dmgbg.swift "$BGDIR" >/dev/null
+  swift Tools/dmgbg.swift "$BGDIR" >/dev/null
   tiffutil -cathidpicheck "$BGDIR/background.png" "$BGDIR/background@2x.png" \
     -out "$BGDIR/background.tiff" 2>/dev/null
 
@@ -67,7 +66,7 @@ if [[ "$1" == "dist" ]]; then
   ln -s /Applications "$STAGE/Applications"
   mkdir "$STAGE/.background"
   cp "$BGDIR/background.tiff" "$STAGE/.background/"
-  cp QuakeLauncher.icns "$STAGE/.VolumeIcon.icns"
+  cp Resources/QuakeLauncher/QuakeLauncher.icns "$STAGE/.VolumeIcon.icns"
   rm -rf "$BGDIR"
 
   # najpierw obraz RW: Finder ustawia w nim układ okna, potem konwersja do UDZO
