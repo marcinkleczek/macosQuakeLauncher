@@ -68,7 +68,7 @@ let ALL_OPTIONS: [CvarOption] = [
     CvarOption(cvar: "r_scale", label: "Pixelation (retro)", section: "Graphics",
                kind: .choice([Choice(label: "Off", value: "1"), Choice(label: "2×", value: "2"), Choice(label: "3×", value: "3"), Choice(label: "4×", value: "4")]),
                defaultValue: "1", help: "Renders the image at a fraction of the resolution — the 1996 look."),
-    CvarOption(cvar: "r_wateralpha", label: "Water transparency", section: "Graphics", kind: .slider(0.3...1, step: 0.05), defaultValue: "1",
+    CvarOption(cvar: "r_wateralpha", label: "Water opacity", section: "Graphics", kind: .slider(0.3...1, step: 0.05), defaultValue: "1",
                help: "On the original maps this requires an engine with transparent water support (QuakeSpasm/vkQuake have it)."),
     CvarOption(cvar: "gamma", label: "Brightness (gamma, lower = brighter)", section: "Graphics", kind: .slider(0.5...1.3, step: 0.05), defaultValue: "1"),
     CvarOption(cvar: "contrast", label: "Contrast", section: "Graphics", kind: .slider(1...2, step: 0.1), defaultValue: "1"),
