@@ -62,17 +62,17 @@ final class ModDBModel: ObservableObject {
         defer { loading = false }
         if !force, let cached = loadCache(), Date().timeIntervalSince(cached.date) < 24 * 3600 {
             mods = cached.mods
-            statusText = "ModDB (cache): \(cached.mods.count) modów."
+            statusText = "ModDB (cache): \(cached.mods.count) mods."
             return
         }
         do {
-            statusText = "Pobieram listę ModDB…"
+            statusText = "Downloading ModDB list…"
             var all: [ModDBMod] = []
             var seen = Set<String>()
             let firstHTML = try await client.html(from: Self.listingURL)
             challengeVisible = client.challengeVisible
             guard !ModDBHTML.isCloudflare(firstHTML) else {
-                statusText = "ModDB zablokował automatyczne pobieranie (Cloudflare). Dokończ weryfikację w oknie i odśwież."
+                statusText = "ModDB blocked automatic downloading (Cloudflare). Complete the Cloudflare check in the window and refresh."
                 return
             }
             let pages = ModDBHTML.listingPages(firstHTML)
@@ -81,7 +81,7 @@ final class ModDBModel: ObservableObject {
             }
             if pages > 1 {
                 for page in 2 ... pages {
-                    statusText = "Pobieram listę ModDB (\(page)/\(pages))…"
+                    statusText = "Downloading ModDB list (\(page)/\(pages))…"
                     guard let url = URL(string: "https://www.moddb.com/games/quake/mods/page/\(page)") else { continue }
                     let html = try await client.html(from: url)
                     for mod in ModDBHTML.listing(html) where seen.insert(mod.slug).inserted {
@@ -91,15 +91,15 @@ final class ModDBModel: ObservableObject {
             }
             mods = all
             saveCache(all)
-            statusText = "ModDB: \(all.count) modów do Quake 1."
+            statusText = "ModDB: \(all.count) Quake 1 mods."
         } catch is CancellationError {
-            statusText = "Anulowano weryfikację ModDB."
+            statusText = "ModDB check cancelled."
         } catch {
             if mods.isEmpty, let cached = loadCache() {
                 mods = cached.mods
-                statusText = "Sieć padła — cache z \(cached.mods.count) pozycjami. (\(error.localizedDescription))"
+                statusText = "Network down — using cache with \(cached.mods.count) items. (\(error.localizedDescription))"
             } else {
-                statusText = "Nie udało się pobrać listy ModDB: \(error.localizedDescription)"
+                statusText = "Couldn't download ModDB list: \(error.localizedDescription)"
             }
         }
         challengeVisible = client.challengeVisible
@@ -118,7 +118,7 @@ final class ModDBModel: ObservableObject {
             }
             mods[idx] = mod
         } catch {
-            statusText = "Nie udało się pobrać strony \(slug): \(error.localizedDescription)"
+            statusText = "Couldn't download page \(slug): \(error.localizedDescription)"
         }
     }
 
@@ -145,7 +145,7 @@ final class ModDBModel: ObservableObject {
 
     func install(_ modIn: ModDBMod, file picked: ModDBFile?, launcher: LauncherModel, registry: InstallRegistry) async {
         guard let base = launcher.baseDir else {
-            statusText = "Najpierw ustaw katalog Quake'a w oknie launchera."
+            statusText = "Set the Quake folder in the launcher window first."
             return
         }
         var mod = modIn
@@ -157,24 +157,24 @@ final class ModDBModel: ObservableObject {
             mod = fresh
         }
         guard var file = picked ?? ModDBHTML.preferredFile(mod.files) else {
-            statusText = "Ten mod nie ma jeszcze plików na ModDB."
+            statusText = "This mod has no files on ModDB yet."
             return
         }
         do {
-            statusText = "Pobieram szczegóły pliku \(file.title)…"
+            statusText = "Loading file details for \(file.title)…"
             let fileURL = URL(string: "https://www.moddb.com/mods/\(mod.slug)/downloads/\(file.slug)")!
             let fileHTML = try await client.html(from: fileURL)
             challengeVisible = client.challengeVisible
             ModDBHTML.applyFilePage(to: &file, html: fileHTML)
             if file.isInstaller {
-                statusText = "Plik \(file.filename.isEmpty ? file.title : file.filename) to instalator Windows/macOS — launcher go nie rozpakuje. Otwórz stronę ModDB."
+                statusText = "File \(file.filename.isEmpty ? file.title : file.filename) is a Windows/macOS installer — the launcher can't unpack it. Open the ModDB page."
                 return
             }
             guard let fileID = file.fileID else {
-                statusText = "Nie znalazłem linku do pobrania dla \(file.title)."
+                statusText = "Couldn't find a download link for \(file.title)."
                 return
             }
-            statusText = "Szukam lustra ModDB dla \(file.filename.isEmpty ? file.title : file.filename)…"
+            statusText = "Looking for a ModDB mirror for \(file.filename.isEmpty ? file.title : file.filename)…"
             let start = URL(string: "https://www.moddb.com/downloads/start/\(fileID)")!
             var startHTML = try await client.html(from: start)
             var mirror = ModDBHTML.mirrorURL(in: startHTML, filename: file.filename.isEmpty ? nil : file.filename)
@@ -183,12 +183,12 @@ final class ModDBModel: ObservableObject {
                 mirror = ModDBHTML.mirrorURL(in: startHTML, filename: file.filename.isEmpty ? nil : file.filename)
             }
             guard let mirror else {
-                statusText = "ModDB nie oddał lustra pliku. Spróbuj ponownie albo pobierz ręcznie ze strony."
+                statusText = "ModDB returned no download mirror. Try again or download manually from the page."
                 return
             }
             let label = file.filename.isEmpty ? file.title : file.filename
             let sizeHint = file.sizeText.isEmpty ? "" : " (\(file.sizeText))"
-            statusText = "Pobieram \(label)\(sizeHint)…"
+            statusText = "Downloading \(label)\(sizeHint)…"
             let tempName = file.filename.isEmpty ? "download.bin" : file.filename
             let tempFile = fm.temporaryDirectory.appendingPathComponent("qmoddb-\(UUID().uuidString)-\(tempName)")
             let staging = fm.temporaryDirectory.appendingPathComponent("qmoddb-unpack-\(UUID().uuidString)")
@@ -199,7 +199,7 @@ final class ModDBModel: ObservableObject {
             }
             try await client.download(mirror, to: tempFile)
 
-            statusText = "Rozpakowuję \(label)…"
+            statusText = "Unpacking \(label)…"
             try fm.createDirectory(at: staging, withIntermediateDirectories: true)
             try PackageFS.extract(tempFile, to: staging)
             PackageFS.lowercaseNames(in: staging)
@@ -218,21 +218,21 @@ final class ModDBModel: ObservableObject {
             if launcher.mods.contains(actual) { launcher.selectedMod = actual }
 
             if !launchable {
-                statusText = "Rozpakowano do \(actual)/, ale nie da się tego uruchomić jako moda (brak pak/progs.dat/maps)."
+                statusText = "Unpacked to \(actual)/, but it can't be run as a mod (no pak/progs.dat/maps)."
             } else if let warn = mod.engineWarning {
-                statusText = "Zainstalowano \(mod.title) → \(actual)/. \(warn)"
+                statusText = "Installed \(mod.title) → \(actual)/. \(warn)"
             } else {
-                statusText = "Zainstalowano \(mod.title) → \(actual)/ — można uruchomić (Graj albo Launch)."
+                statusText = "Installed \(mod.title) → \(actual)/ — ready to run (Play or Launch)."
             }
         } catch {
-            statusText = "Błąd instalacji \(mod.slug): \(error.localizedDescription)"
+            statusText = "Install failed for \(mod.slug): \(error.localizedDescription)"
         }
     }
 
     func play(_ mod: ModDBMod, launcher: LauncherModel, registry: InstallRegistry, map: String? = nil) {
         let dir = registry.entry(.moddb, mod.slug)?.gameDir ?? mod.slug
         guard launcher.canRun(gameDir: dir) else {
-            statusText = "Katalog \(launcher.actualGameDir(dir))/ nie wygląda na moda Quake'a — nie uruchamiam."
+            statusText = "Directory \(launcher.actualGameDir(dir))/ doesn't look like a Quake mod — not launching."
             return
         }
         launcher.runGame(gameDir: dir, map: map ?? startMap(for: mod, registry: registry))

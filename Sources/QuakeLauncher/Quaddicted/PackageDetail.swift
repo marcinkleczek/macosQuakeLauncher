@@ -9,7 +9,7 @@ struct PackageDetail: View {
     private var subtitle: String {
         var parts = [pkg.author, pkg.date]
         if pkg.sizeKB > 0 { parts.append(pkg.sizeText) }
-        if pkg.ratingAvg > 0 { parts.append(String(format: "ocena %.1f★ (%d głosów)", pkg.ratingAvg, pkg.ratingCount)) }
+        if pkg.ratingAvg > 0 { parts.append(String(format: "rating %.1f★ (%d votes)", pkg.ratingAvg, pkg.ratingCount)) }
         parts.append("id: \(pkg.id)")
         return parts.joined(separator: " · ")
     }
@@ -26,7 +26,7 @@ struct PackageDetail: View {
                     case .success(let image):
                         image.resizable().scaledToFit().clipShape(RoundedRectangle(cornerRadius: 6))
                     case .failure:
-                        Label("Brak zrzutu ekranu", systemImage: "photo")
+                        Label("No screenshot", systemImage: "photo")
                             .foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 120)
                     default:
                         ProgressView().frame(maxWidth: .infinity, minHeight: 120)
@@ -37,26 +37,26 @@ struct PackageDetail: View {
                 HStack {
                     if !pkg.detailLoaded, !browser.installing.contains(pkg.id) {
                         ProgressView().controlSize(.small)
-                        Text("Pobieram szczegóły…").font(.caption).foregroundStyle(.secondary)
+                        Text("Loading details…").font(.caption).foregroundStyle(.secondary)
                     } else if browser.installing.contains(pkg.id) {
                         ProgressView().controlSize(.small)
-                        Text("Instaluję…")
+                        Text("Installing…")
                     } else if browser.isInstalled(pkg, launcher: launcher) {
-                        Button("Graj ▶") { browser.play(pkg, launcher: launcher) }
+                        Button("Play ▶") { browser.play(pkg, launcher: launcher) }
                             .buttonStyle(.borderedProminent)
                         let maps = browser.availableMaps(pkg)
                         if maps.count > 1 {
-                            Menu("mapa ▾") {
+                            Menu("map ▾") {
                                 ForEach(maps, id: \.self) { map in
                                     Button(map) { browser.play(pkg, launcher: launcher, map: map) }
                                 }
                             }
                             .frame(width: 90)
                         }
-                        Label("zainstalowana", systemImage: "checkmark.circle.fill")
+                        Label("installed", systemImage: "checkmark.circle.fill")
                             .font(.caption).foregroundStyle(.green)
                     } else {
-                        Button("Pobierz i zainstaluj") {
+                        Button("Download and install") {
                             Task { await browser.install(pkg, launcher: launcher, registry: registry) }
                         }
                         .buttonStyle(.borderedProminent)
@@ -67,7 +67,7 @@ struct PackageDetail: View {
 
                 if !pkg.requirements.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Wymaga:").font(.callout).bold()
+                        Text("Requires:").font(.callout).bold()
                         ForEach(pkg.requirements, id: \.self) { reqID in
                             requirementRow(reqID)
                         }
@@ -77,20 +77,20 @@ struct PackageDetail: View {
                     // duże mody (Arcane Dimensions, Copper, Quoth) nie są hostowane
                     // na Quaddicted — bazę trzeba zdobyć samemu. Sam katalog nie wystarczy:
                     // tworzą go same mapy, a bez progs.dat mapa startuje bez logiki moda.
-                    Label("Wymaga moda \"\(mod)\" — w katalogu gry są tylko mapy, brakuje samego moda "
-                          + "(progs.dat/pak). Bez niego mapa uruchomi się bez logiki dodatku.",
+                    Label("Requires mod \"\(mod)\" — the game folder only has the maps, the mod itself is missing "
+                          + "(progs.dat/pak). Without it the map runs without the mod's game logic.",
                           systemImage: "exclamationmark.triangle")
                         .font(.caption).foregroundStyle(.orange)
                 }
                 if !pkg.startmaps.isEmpty {
-                    Text("Mapa startowa: \(pkg.startmaps.joined(separator: ", "))")
+                    Text("Start map: \(pkg.startmaps.joined(separator: ", "))")
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 if !pkg.commandline.isEmpty {
-                    Text("Parametry: \(pkg.commandline)").font(.caption.monospaced()).foregroundStyle(.secondary)
+                    Text("Command line: \(pkg.commandline)").font(.caption.monospaced()).foregroundStyle(.secondary)
                 }
                 if !pkg.tags.isEmpty {
-                    Text("Tagi: \(pkg.tags.joined(separator: ", "))").font(.caption).foregroundStyle(.secondary)
+                    Text("Tags: \(pkg.tags.joined(separator: ", "))").font(.caption).foregroundStyle(.secondary)
                 }
                 if browser.isInstalled(pkg, launcher: launcher), !browser.availableMaps(pkg).isEmpty {
                     Divider()
@@ -117,7 +117,7 @@ struct PackageDetail: View {
                     .foregroundStyle(installed ? .green : .orange)
                 Text(req.title.isEmpty ? req.id : req.title)
                 if !installed, !browser.installing.contains(req.id) {
-                    Button("Zainstaluj") {
+                    Button("Install") {
                         Task { await browser.install(req, launcher: launcher, registry: registry) }
                     }
                     .controlSize(.small)

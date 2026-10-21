@@ -25,7 +25,7 @@ let KEYBOARD_ROWS: [[KeyDef]] = [
         + [k("semi", ";", "SEMICOLON"), k("quote", "'", "'"), k("ent", "Enter", "ENTER", 2.25)],
     [k("lsh", "Shift", "SHIFT", 2.25)] + "zxcvbnm".map { k(String($0), String($0), String($0)) }
         + [k("com", ",", ","), k("dot", ".", "."), k("sl", "/", "/"), k("rsh", "Shift", "SHIFT", 2.75)],
-    [k("lct", "Ctrl", "CTRL", 1.5), k("lal", "Alt", "ALT", 1.5), k("spc", "Spacja", "SPACE", 9),
+    [k("lct", "Ctrl", "CTRL", 1.5), k("lal", "Alt", "ALT", 1.5), k("spc", "Space", "SPACE", 9),
      k("ral", "Alt", "ALT", 1.5), k("rct", "Ctrl", "CTRL", 1.5)],
 ]
 
@@ -38,8 +38,8 @@ let ARROW_KEYS = (up: k("up", "▲", "UPARROW"), left: k("left", "◀", "LEFTARR
                   down: k("down", "▼", "DOWNARROW"), right: k("right", "▶", "RIGHTARROW"))
 
 let MOUSE_KEYS: [KeyDef] = [
-    k("m1", "LPM", "MOUSE1", 1.8), k("m2", "PPM", "MOUSE2", 1.8), k("m3", "ŚPM", "MOUSE3", 1.8),
-    k("mwu", "Kółko ▲", "MWHEELUP", 2.2), k("mwd", "Kółko ▼", "MWHEELDOWN", 2.2),
+    k("m1", "LMB", "MOUSE1", 1.8), k("m2", "RMB", "MOUSE2", 1.8), k("m3", "MMB", "MOUSE3", 1.8),
+    k("mwu", "Wheel ▲", "MWHEELUP", 2.2), k("mwd", "Wheel ▼", "MWHEELDOWN", 2.2),
     k("m4", "M4", "MOUSE4", 1.2), k("m5", "M5", "MOUSE5", 1.2),
 ]
 
@@ -51,38 +51,38 @@ struct CommandDef {
 }
 
 let COMMAND_GROUPS: [(name: String, color: Color, commands: [CommandDef])] = [
-    ("Ruch", .blue, [
-        CommandDef(cmd: "+forward", label: "Naprzód"),
-        CommandDef(cmd: "+back", label: "W tył"),
-        CommandDef(cmd: "+moveleft", label: "W lewo (strafe)"),
-        CommandDef(cmd: "+moveright", label: "W prawo (strafe)"),
-        CommandDef(cmd: "+jump", label: "Skok / pływanie w górę"),
-        CommandDef(cmd: "+moveup", label: "Pływanie w górę"),
-        CommandDef(cmd: "+movedown", label: "Pływanie w dół"),
-        CommandDef(cmd: "+speed", label: "Bieg (gdy wyłączone „zawsze biegaj”)"),
+    ("Movement", .blue, [
+        CommandDef(cmd: "+forward", label: "Move forward"),
+        CommandDef(cmd: "+back", label: "Move back"),
+        CommandDef(cmd: "+moveleft", label: "Strafe left"),
+        CommandDef(cmd: "+moveright", label: "Strafe right"),
+        CommandDef(cmd: "+jump", label: "Jump / swim up"),
+        CommandDef(cmd: "+moveup", label: "Swim up"),
+        CommandDef(cmd: "+movedown", label: "Swim down"),
+        CommandDef(cmd: "+speed", label: "Run (when “Always run” is off)"),
     ]),
-    ("Broń", .red, [
-        CommandDef(cmd: "impulse 1", label: "Siekiera"),
+    ("Weapons", .red, [
+        CommandDef(cmd: "impulse 1", label: "Axe"),
         CommandDef(cmd: "impulse 2", label: "Shotgun"),
         CommandDef(cmd: "impulse 3", label: "Super Shotgun"),
         CommandDef(cmd: "impulse 4", label: "Nailgun"),
         CommandDef(cmd: "impulse 5", label: "Super Nailgun"),
-        CommandDef(cmd: "impulse 6", label: "Granatnik"),
-        CommandDef(cmd: "impulse 7", label: "Wyrzutnia rakiet"),
+        CommandDef(cmd: "impulse 6", label: "Grenade Launcher"),
+        CommandDef(cmd: "impulse 7", label: "Rocket Launcher"),
         CommandDef(cmd: "impulse 8", label: "Thunderbolt"),
-        CommandDef(cmd: "impulse 10", label: "Następna broń"),
-        CommandDef(cmd: "impulse 12", label: "Poprzednia broń"),
+        CommandDef(cmd: "impulse 10", label: "Next weapon"),
+        CommandDef(cmd: "impulse 12", label: "Previous weapon"),
     ]),
-    ("Akcje", .orange, [
-        CommandDef(cmd: "+attack", label: "Strzał"),
-        CommandDef(cmd: "+showscores", label: "Tablica wyników"),
-        CommandDef(cmd: "screenshot", label: "Zrzut ekranu"),
-        CommandDef(cmd: "save quick", label: "Szybki zapis"),
-        CommandDef(cmd: "load quick", label: "Szybkie wczytanie"),
-        CommandDef(cmd: "messagemode", label: "Czat"),
-        CommandDef(cmd: "messagemode2", label: "Czat drużynowy"),
-        CommandDef(cmd: "pause", label: "Pauza"),
-        CommandDef(cmd: "toggleconsole", label: "Konsola"),
+    ("Actions", .orange, [
+        CommandDef(cmd: "+attack", label: "Attack"),
+        CommandDef(cmd: "+showscores", label: "Scoreboard"),
+        CommandDef(cmd: "screenshot", label: "Screenshot"),
+        CommandDef(cmd: "save quick", label: "Quick save"),
+        CommandDef(cmd: "load quick", label: "Quick load"),
+        CommandDef(cmd: "messagemode", label: "Chat"),
+        CommandDef(cmd: "messagemode2", label: "Team chat"),
+        CommandDef(cmd: "pause", label: "Pause"),
+        CommandDef(cmd: "toggleconsole", label: "Toggle console"),
     ]),
 ]
 

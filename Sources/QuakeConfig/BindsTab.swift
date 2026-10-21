@@ -48,8 +48,8 @@ struct KeyCap: View {
     }
 
     private func helpText(_ command: String) -> String {
-        if key.quake == nil { return "Klawisz zarezerwowany (menu / konsola)" }
-        return command.isEmpty ? "Wolny klawisz — kliknij, aby przypisać" : command
+        if key.quake == nil { return "Reserved key (menu / console)" }
+        return command.isEmpty ? "Unbound key — click to assign" : command
     }
 }
 
@@ -64,9 +64,9 @@ struct KeyPopover: View {
                 Text(keyDef.label).font(.headline)
                 Text(quake).font(.caption.monospaced()).foregroundStyle(.secondary)
             }
-            TextField("komenda (puste = wolny klawisz)", text: model.commandBinding(forKey: quake))
+            TextField("command (empty = unbound)", text: model.commandBinding(forKey: quake))
                 .frame(width: 270)
-            Menu("Typowe komendy") {
+            Menu("Common commands") {
                 ForEach(COMMAND_GROUPS, id: \.name) { group in
                     Section(group.name) {
                         ForEach(group.commands, id: \.cmd) { command in
@@ -78,7 +78,7 @@ struct KeyPopover: View {
                 }
             }
             if !model.command(forKey: quake).isEmpty {
-                Button("Uwolnij klawisz", role: .destructive) {
+                Button("Unbind key", role: .destructive) {
                     model.setBind(key: quake, command: "")
                 }
             }
@@ -122,18 +122,18 @@ struct BindsTab: View {
                 }
             }
             HStack(spacing: 3) {
-                Text("Mysz:").font(.caption).frame(width: 44, alignment: .leading)
+                Text("Mouse:").font(.caption).frame(width: 44, alignment: .leading)
                 ForEach(MOUSE_KEYS) { key in
                     KeyCap(model: model, key: key, selectedKeyID: $selectedKeyID)
                 }
             }
             Divider()
-            Text("Wszystkie bindy (także klawisze spoza rysunku):").font(.callout)
+            Text("All key bindings (including keys not shown above):").font(.callout)
             List {
                 ForEach($model.binds) { $bind in
                     HStack {
-                        TextField("klawisz", text: $bind.key).frame(width: 120)
-                        TextField("komenda", text: $bind.command)
+                        TextField("key", text: $bind.key).frame(width: 120)
+                        TextField("command", text: $bind.command)
                         Button {
                             model.binds.removeAll { $0.id == bind.id }
                         } label: {
@@ -144,7 +144,7 @@ struct BindsTab: View {
                 }
             }
             .onChange(of: model.binds) { model.dirty = true }
-            Button("Dodaj bind") { model.binds.append(BindEntry(key: "", command: "")) }
+            Button("Add binding") { model.binds.append(BindEntry(key: "", command: "")) }
         }
         .padding(12)
     }
@@ -155,9 +155,9 @@ struct BindsTab: View {
                 Label(group.name, systemImage: "circle.fill")
                     .font(.caption).foregroundStyle(group.color)
             }
-            Label("Własne", systemImage: "circle.fill").font(.caption).foregroundStyle(.purple)
+            Label("Custom", systemImage: "circle.fill").font(.caption).foregroundStyle(.purple)
             Spacer()
-            Text("Kliknij klawisz, aby przypisać komendę").font(.caption).foregroundStyle(.secondary)
+            Text("Click a key to assign a command").font(.caption).foregroundStyle(.secondary)
         }
     }
 }

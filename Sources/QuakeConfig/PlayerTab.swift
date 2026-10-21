@@ -19,29 +19,29 @@ struct PlayerTab: View {
         Form {
             Section("Multiplayer") {
                 HStack {
-                    Text("Imię gracza")
+                    Text("Player name")
                     Spacer()
                     TextField("player", text: model.stringBinding(nameOption))
                         .frame(width: 240).multilineTextAlignment(.trailing)
                 }
-                Toggle("Złote litery", isOn: goldBinding)
+                Toggle("Gold letters", isOn: goldBinding)
                     .disabled((model.values["name"] ?? "").isEmpty)
-                Text("Złote litery to znaki 128–255 charsetu Quake'a — działają tylko w silnikach z oryginalnym charsetem. Gra wyświetla wyłącznie ASCII, polskie znaki pojawią się jako „?”.")
+                Text("Gold letters are characters 128–255 of the Quake charset — they only work in engines that use the original charset. The game displays ASCII only; accented characters will show up as “?”.")
                     .font(.caption).foregroundStyle(.secondary)
                 // puste pole = gra użyje domyślnego "player", więc tak też pokazujemy podgląd
                 QuakeTextPreview(text: (model.values["name"] ?? "").isEmpty ? "player" : model.values["name"]!,
                                  font: model.font)
                 if model.font == nil {
-                    Text("Nie znalazłem czcionki gry w id1/pak0.pak — podgląd zastępczy.")
+                    Text("Couldn't find the game font in id1/pak0.pak — showing a fallback preview.")
                         .font(.caption).foregroundStyle(.orange)
                 }
             }
-            Section("Po wczytaniu konfigu") {
-                Toggle("Pokaż komunikat w konsoli", isOn: Binding(
+            Section("After the config loads") {
+                Toggle("Show a message in the console", isOn: Binding(
                     get: { model.greeting },
                     set: { model.greeting = $0; model.dirty = true }
                 ))
-                Text("Linia `echo` na końcu autoexec.cfg — potwierdza, że konfig się wykonał. Widoczna w konsoli (klawisz ~).")
+                Text("An `echo` line at the end of autoexec.cfg — confirms that the config was executed. Visible in the console (~ key).")
                     .font(.caption).foregroundStyle(.secondary)
                 if model.greeting {
                     QuakeTextPreview(text: model.greetingText(), font: model.font, scale: 2)

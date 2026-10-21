@@ -92,7 +92,7 @@ func render(scale: CGFloat, to url: URL) {
     }
     drawText("QUAKE TOOLS", centerX: W / 2, baselineY: flipY(52),
              size: 19, color: rgb(0xD9A85E, 0.9), kern: 7, weight: "Medium")
-    drawText("Przeciągnij aplikacje do folderu Applications", centerX: W / 2, baselineY: flipY(416),
+    drawText("Drag the apps to the Applications folder", centerX: W / 2, baselineY: flipY(416),
              size: 13, color: rgb(0xB08A55, 0.9), kern: 0.4, weight: "Regular")
 
     let image = ctx.makeImage()!

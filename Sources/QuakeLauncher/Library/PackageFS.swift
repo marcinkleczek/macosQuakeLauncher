@@ -159,7 +159,7 @@ enum PackageFS {
         }
         guard let unar else {
             throw NSError(domain: "PackageFS", code: 1, userInfo: [
-                NSLocalizedDescriptionKey: "Nie umiem rozpakować \(archive.lastPathComponent) (brak unar). Potrzebny ZIP albo The Unarchiver CLI.",
+                NSLocalizedDescriptionKey: "Can't extract \(archive.lastPathComponent) (unar not found). Use a ZIP or install The Unarchiver CLI.",
             ])
         }
         try run(unar, ["-o", dest.path, "-f", archive.path], okUpTo: 0)
@@ -213,7 +213,7 @@ enum PackageFS {
         p.waitUntilExit()
         guard p.terminationStatus <= okUpTo else {
             throw NSError(domain: "PackageFS", code: Int(p.terminationStatus), userInfo: [
-                NSLocalizedDescriptionKey: "\(exe) zakończył się kodem \(p.terminationStatus)",
+                NSLocalizedDescriptionKey: "\(exe) exited with code \(p.terminationStatus)",
             ])
         }
     }

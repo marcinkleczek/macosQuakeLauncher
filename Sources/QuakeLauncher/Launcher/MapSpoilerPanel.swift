@@ -39,13 +39,13 @@ struct MapSpoilerPanel: View {
                         .font(.caption.bold())
                         .frame(width: 10)
                     Image(systemName: revealed ? "eye" : "eye.slash")
-                    Text(revealed ? "Zawartość mapy" : "Pokaż zawartość mapy (spoiler)")
+                    Text(revealed ? "Map contents" : "Show map contents (spoiler)")
                     Spacer()
                 }
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Czyta listę encji z pliku .bsp — bronie, sekrety, przyciski, potwory.")
+            .help("Reads the entity list from the .bsp file — weapons, secrets, buttons, monsters.")
 
             if revealed {
                 if maps.count > 1 {
@@ -58,8 +58,8 @@ struct MapSpoilerPanel: View {
                     details(info)
                 } else if failed {
                     Label(maps.isEmpty
-                            ? "Nie znalazłem plików map tej paczki w katalogu gry."
-                            : "Nie udało się odczytać tej mapy (nieznany format BSP).",
+                            ? "Couldn't find this package's map files in the game folder."
+                            : "Couldn't read this map (unknown BSP format).",
                           systemImage: "exclamationmark.triangle")
                         .font(.caption).foregroundStyle(.orange)
                 }
@@ -88,7 +88,7 @@ struct MapSpoilerPanel: View {
                 if !info.title.isEmpty {
                     Text(info.title).font(.callout).bold()
                 }
-                Text(info.headline.joined(separator: " · ") + " · poziom: \(info.skillLabel)")
+                Text(info.headline.joined(separator: " · ") + " · skill: \(info.skillLabel)")
                     .font(.caption).foregroundStyle(.secondary)
             }
 

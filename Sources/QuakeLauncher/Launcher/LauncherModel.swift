@@ -199,7 +199,7 @@ final class LauncherModel: ObservableObject {
     /// a mission packi dostają swoje flagi zamiast -game.
     func runGame(gameDir: String?, map: String? = nil, extraArgs: [String] = []) {
         guard let exec = selectedEngine?.execURL, let base = baseDir else {
-            status = "Ustaw silnik i katalog Quake'a."
+            status = "Set the engine and Quake folder."
             return
         }
         var args = ["-basedir", base.path]
@@ -230,9 +230,9 @@ final class LauncherModel: ObservableObject {
         if let env = gameEnvironment() { process.environment = env }
         do {
             try process.run()
-            status = "Uruchomiono: \(args.joined(separator: " "))"
+            status = "Launched: \(args.joined(separator: " "))"
         } catch {
-            status = "Błąd uruchamiania: \(error.localizedDescription)"
+            status = "Launch failed: \(error.localizedDescription)"
         }
     }
 
@@ -343,7 +343,7 @@ final class LauncherModel: ObservableObject {
 
     func launch() {
         guard let engine = selectedEngine, let exec = engine.execURL, let base = baseDir else {
-            status = "Brak silnika lub katalogu gry."
+            status = "No engine or Quake folder set."
             return
         }
         var args = ["-basedir", base.path]
@@ -365,9 +365,9 @@ final class LauncherModel: ObservableObject {
         if let env = gameEnvironment() { process.environment = env }
         do {
             try process.run()
-            status = "Uruchomiono: \(engine.name) \(args.joined(separator: " "))"
+            status = "Launched: \(engine.name) \(args.joined(separator: " "))"
         } catch {
-            status = "Błąd uruchamiania: \(error.localizedDescription)"
+            status = "Launch failed: \(error.localizedDescription)"
         }
     }
 }

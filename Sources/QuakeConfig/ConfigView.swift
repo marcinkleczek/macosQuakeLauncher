@@ -6,14 +6,14 @@ struct AdvancedTab: View {
     var body: some View {
         VSplitView {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Własne komendy (zachowywane przy zapisie):").font(.callout)
+                Text("Custom commands (kept on save):").font(.callout)
                 TextEditor(text: $model.customText)
                     .font(.system(.body, design: .monospaced))
                     .onChange(of: model.customText) { model.dirty = true }
             }
             .padding(10)
             VStack(alignment: .leading, spacing: 4) {
-                Text("Podgląd pliku autoexec.cfg:").font(.callout)
+                Text("autoexec.cfg preview:").font(.callout)
                 ScrollView {
                     Text(model.configText())
                         .font(.system(.caption, design: .monospaced))
@@ -38,18 +38,18 @@ struct ConfigView: View {
                 headerBar
                 Divider()
                 TabView {
-                    OptionsTab(model: model, sections: ["Mysz", "Ruch", "Widok"])
-                        .tabItem { Text("Sterowanie") }
-                    OptionsTab(model: model, sections: ["Tryb wideo", "Grafika"])
-                        .tabItem { Text("Obraz") }
-                    OptionsTab(model: model, sections: ["HUD", "Dźwięk"])
-                        .tabItem { Text("HUD i dźwięk") }
+                    OptionsTab(model: model, sections: ["Mouse", "Movement", "View"])
+                        .tabItem { Text("Controls") }
+                    OptionsTab(model: model, sections: ["Video mode", "Graphics"])
+                        .tabItem { Text("Display") }
+                    OptionsTab(model: model, sections: ["HUD", "Sound"])
+                        .tabItem { Text("HUD & Sound") }
                     BindsTab(model: model)
-                        .tabItem { Text("Bindy") }
+                        .tabItem { Text("Key bindings") }
                     PlayerTab(model: model)
-                        .tabItem { Text("Gracz") }
+                        .tabItem { Text("Player") }
                     AdvancedTab(model: model)
-                        .tabItem { Text("Zaawansowane") }
+                        .tabItem { Text("Advanced") }
                 }
                 statusBar
             }
@@ -59,25 +59,25 @@ struct ConfigView: View {
 
     private var setupView: some View {
         VStack(spacing: 12) {
-            Text("Wskaż katalog Quake'a").font(.title2)
-            Text("Katalog zawierający id1 i katalogi modów.").foregroundStyle(.secondary)
-            Button("Wybierz katalog…") { pickBaseDir() }
+            Text("Locate your Quake folder").font(.title2)
+            Text("The folder that contains id1 and the mod folders.").foregroundStyle(.secondary)
+            Button("Choose folder…") { pickBaseDir() }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var headerBar: some View {
         HStack {
-            Text("Konfig dla:")
+            Text("Config for:")
             Picker("", selection: Binding(get: { model.selectedDir }, set: { model.switchDir(to: $0) })) {
                 ForEach(model.gameDirs, id: \.self) { Text($0).tag($0) }
             }
             .labelsHidden().frame(width: 160)
-            .help("Mission packi i mody bez własnego autoexec.cfg dziedziczą ten z id1.")
-            Button("Zmień katalog…") { pickBaseDir() }
+            .help("Mission packs and mods without their own autoexec.cfg inherit the one from id1.")
+            Button("Change folder…") { pickBaseDir() }
             Spacer()
-            Button("Przywróć domyślne") { model.resetDefaults() }
-            Button("Zapisz") { model.save() }
+            Button("Restore Defaults") { model.resetDefaults() }
+            Button("Save") { model.save() }
                 .keyboardShortcut("s")
                 .buttonStyle(.borderedProminent)
         }
@@ -89,7 +89,7 @@ struct ConfigView: View {
             Text(model.status).font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
             Spacer()
             if model.dirty {
-                Text("● niezapisane zmiany").font(.caption).foregroundStyle(.orange)
+                Text("● unsaved changes").font(.caption).foregroundStyle(.orange)
             }
         }
         .padding(.horizontal, 10).padding(.vertical, 6)
@@ -99,7 +99,7 @@ struct ConfigView: View {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
-        panel.message = "Wybierz katalog Quake'a (zawierający id1)"
+        panel.message = "Choose the Quake folder (the one containing id1)"
         if panel.runModal() == .OK, let url = panel.url {
             model.setBaseDir(url)
         }

@@ -11,12 +11,12 @@ enum PackageKind: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .all: return "Wszystko"
-        case .map: return "Mapy"
-        case .mod: return "Mody"
-        case .episode: return "Epizody"
-        case .mapjam: return "Jamy"
-        case .speedmap: return "Speedmapy"
+        case .all: return "All"
+        case .map: return "Maps"
+        case .mod: return "Mods"
+        case .episode: return "Episodes"
+        case .mapjam: return "Jams"
+        case .speedmap: return "Speedmaps"
         }
     }
 
@@ -24,11 +24,11 @@ enum PackageKind: String, CaseIterable, Identifiable {
     var singular: String {
         switch self {
         case .all: return ""
-        case .map: return "mapa"
+        case .map: return "map"
         case .mod: return "mod"
-        case .episode: return "epizod"
+        case .episode: return "episode"
         case .mapjam: return "jam"
-        case .speedmap: return "speedmapa"
+        case .speedmap: return "speedmap"
         }
     }
 }

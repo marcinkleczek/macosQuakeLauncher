@@ -34,10 +34,10 @@ struct LibraryView: View {
     var body: some View {
         VStack(spacing: 8) {
             HStack {
-                TextField("Szukaj w pobranych…", text: $searchText)
+                TextField("Search downloads…", text: $searchText)
                     .textFieldStyle(.roundedBorder)
                 Picker("", selection: $sourceFilter) {
-                    Text("Wszystkie źródła").tag(Optional<InstallSource>.none)
+                    Text("All sources").tag(Optional<InstallSource>.none)
                     ForEach(InstallSource.allCases) { Text($0.label).tag(Optional($0)) }
                 }
                 .labelsHidden().frame(width: 160)
@@ -45,7 +45,7 @@ struct LibraryView: View {
             .padding([.top, .horizontal], 10)
 
             Table(rows, selection: $selection, sortOrder: $sortOrder) {
-                TableColumn("Nazwa", value: \.displayTitle) { entry in
+                TableColumn("Name", value: \.displayTitle) { entry in
                     HStack(spacing: 4) {
                         if playable(entry) {
                             Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
@@ -53,17 +53,17 @@ struct LibraryView: View {
                         Text(entry.displayTitle).lineLimit(1)
                     }
                 }
-                TableColumn("Źródło", value: \.source.rawValue) { Text($0.source.label) }.width(90)
-                TableColumn("Pobrano", value: \.sortDate) { entry in
+                TableColumn("Source", value: \.source.rawValue) { Text($0.source.label) }.width(90)
+                TableColumn("Downloaded", value: \.sortDate) { entry in
                     Text(entry.dateText)
                         .foregroundStyle(entry.date == nil ? .secondary : .primary)
                 }
                 .width(90)
-                TableColumn("Katalog gry", value: \.slug) { entry in
+                TableColumn("Game folder", value: \.slug) { entry in
                     Text(entry.gameDir ?? "—").foregroundStyle(entry.gameDir == nil ? .secondary : .primary)
                 }
                 .width(130)
-                TableColumn("Mapy") { entry in
+                TableColumn("Maps") { entry in
                     Text(entry.maps.isEmpty ? "—" : "\(entry.maps.count)")
                         .foregroundStyle(entry.maps.isEmpty ? .secondary : .primary)
                 }
@@ -72,9 +72,9 @@ struct LibraryView: View {
             .contextMenu(forSelectionType: String.self) { ids in
                 if let id = ids.first, let entry = registry.entries[id] {
                     if playable(entry) {
-                        Button("Graj") { play(entry) }
+                        Button("Play") { play(entry) }
                     }
-                    Button("Usuń z listy (pliki zostają)") {
+                    Button("Remove from list (keeps files)") {
                         registry.forget(entry.source, entry.slug, base: launcher.baseDir)
                     }
                 }
@@ -84,11 +84,11 @@ struct LibraryView: View {
 
             HStack {
                 Text(datedCount == registry.entries.count
-                     ? "\(registry.entries.count) pozycji"
-                     : "\(registry.entries.count) pozycji, z datą \(datedCount)")
+                     ? "\(registry.entries.count) items"
+                     : "\(registry.entries.count) items, \(datedCount) dated")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
-                Text("\(rows.count) widocznych").font(.caption).foregroundStyle(.secondary)
+                Text("\(rows.count) shown").font(.caption).foregroundStyle(.secondary)
             }
             .padding([.bottom, .horizontal], 10)
         }

@@ -103,7 +103,7 @@ final class BrowserModel: ObservableObject {
         do {
             try data.write(to: url, options: .atomic)
         } catch {
-            statusText = "Nie udało się zapisać historii instalacji: \(error.localizedDescription)"
+            statusText = "Couldn't save install history: \(error.localizedDescription)"
         }
     }
 
@@ -162,7 +162,7 @@ final class BrowserModel: ObservableObject {
             data = try? Data(contentsOf: cacheFile)
         }
         if data == nil {
-            statusText = "Pobieram bazę Quaddicted…"
+            statusText = "Downloading Quaddicted database…"
             do {
                 let (fresh, response) = try await URLSession.shared.data(from: Self.databaseURL)
                 guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
@@ -171,17 +171,17 @@ final class BrowserModel: ObservableObject {
             } catch {
                 data = try? Data(contentsOf: cacheFile) // sieć padła — użyj starego cache, jeśli jest
                 if data == nil {
-                    statusText = "Nie udało się pobrać bazy: \(error.localizedDescription)"
+                    statusText = "Couldn't download database: \(error.localizedDescription)"
                     return
                 }
             }
         }
         guard let raw = data else { return }
-        statusText = "Przetwarzam bazę…"
+        statusText = "Processing database…"
         let html = String(decoding: raw, as: UTF8.self)
         let parsed = await Task.detached(priority: .userInitiated) { QuaddictedIndex.parse(html) }.value
         packages = parsed
-        statusText = "Baza Quaddicted: \(parsed.count) pozycji."
+        statusText = "Quaddicted database: \(parsed.count) items."
     }
 
     /// Uzupełnia rejestr o rzeczy, których dawniej nie zapisywaliśmy: wymagany mod bazowy
@@ -267,7 +267,7 @@ final class BrowserModel: ObservableObject {
 
     func install(_ pkgIn: MapPackage, launcher: LauncherModel, registry: InstallRegistry) async {
         guard let base = launcher.baseDir else {
-            statusText = "Najpierw ustaw katalog Quake'a w oknie launchera."
+            statusText = "Set the Quake folder in the launcher window first."
             return
         }
         var pkg = pkgIn
@@ -276,12 +276,12 @@ final class BrowserModel: ObservableObject {
         if !pkg.detailLoaded {
             await ensureDetail(pkg.id)
             guard let fresh = packages.first(where: { $0.id == pkg.id }), fresh.detailLoaded else {
-                statusText = "Nie udało się pobrać szczegółów \(pkg.id) — spróbuj ponownie."
+                statusText = "Couldn't fetch details for \(pkg.id) — try again."
                 return
             }
             pkg = fresh
         }
-        statusText = "Pobieram \(pkg.filename.isEmpty ? pkg.id + ".zip" : pkg.filename)…"
+        statusText = "Downloading \(pkg.filename.isEmpty ? pkg.id + ".zip" : pkg.filename)…"
         do {
             let zipURL = pkg.downloadURL ?? URL(string: "https://www.quaddicted.com/filebase/\(pkg.id).zip")!
             let (tempZip, response) = try await URLSession.shared.download(from: zipURL)
@@ -353,10 +353,10 @@ final class BrowserModel: ObservableObject {
                             maps: bspNames.map { $0.lowercased() }, base: base,
                             requiresMod: pkg.requiredMod)
             launcher.rescan()
-            let where_ = installRelPath(pkg).map { $0.isEmpty ? "katalog bazowy" : "\($0)/" } ?? "\(pkg.id)/"
-            statusText = "Zainstalowano \(pkg.title.isEmpty ? pkg.id : pkg.title) → \(where_)"
+            let where_ = installRelPath(pkg).map { $0.isEmpty ? "Quake folder" : "\($0)/" } ?? "\(pkg.id)/"
+            statusText = "Installed \(pkg.title.isEmpty ? pkg.id : pkg.title) → \(where_)"
         } catch {
-            statusText = "Błąd instalacji \(pkg.id): \(error.localizedDescription)"
+            statusText = "Install failed for \(pkg.id): \(error.localizedDescription)"
         }
     }
 
@@ -403,7 +403,7 @@ final class BrowserModel: ObservableObject {
               let api = (try? JSONDecoder().decode([APIPackage].self, from: data))?.first
         else {
             if detailFailures.insert(id).inserted {
-                statusText = "Nie udało się pobrać szczegółów \(id)."
+                statusText = "Couldn't fetch details for \(id)."
             }
             return
         }
@@ -446,7 +446,7 @@ final class BrowserModel: ObservableObject {
 
     func play(_ pkg: MapPackage, launcher: LauncherModel, map: String? = nil) {
         guard let exec = launcher.selectedEngine?.execURL, let base = launcher.baseDir else {
-            statusText = "Ustaw silnik i katalog w oknie launchera."
+            statusText = "Set the engine and Quake folder in the launcher window."
             return
         }
         var args = ["-basedir", base.path]
@@ -475,9 +475,9 @@ final class BrowserModel: ObservableObject {
         if let env = launcher.gameEnvironment() { process.environment = env }
         do {
             try process.run()
-            statusText = "Uruchomiono: \(args.joined(separator: " "))"
+            statusText = "Launched: \(args.joined(separator: " "))"
         } catch {
-            statusText = "Błąd uruchamiania: \(error.localizedDescription)"
+            statusText = "Launch failed: \(error.localizedDescription)"
         }
     }
 }

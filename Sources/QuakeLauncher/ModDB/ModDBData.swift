@@ -46,7 +46,7 @@ struct ModDBMod: Identifiable, Hashable, Codable {
 
     var statusText: String {
         if !status.isEmpty { return status }
-        if released != nil { return "Wydany" }
+        if released != nil { return "Released" }
         return "—"
     }
 
@@ -65,10 +65,10 @@ struct ModDBMod: Identifiable, Hashable, Codable {
         if blob.contains("zircon") { need.append("Zircon") }
         var notes: [String] = []
         if title.lowercased().contains("engine") || slug.contains("engine") {
-            notes.append("To wygląda na silnik, nie na katalog -game — launcher rozpakuje archiwum, ale nie uruchomi tego jako moda.")
+            notes.append("This looks like an engine, not a -game directory — the launcher will unpack the archive but won't run it as a mod.")
         }
         if !need.isEmpty {
-            notes.append("Ten mod jest pod \(need.joined(separator: "/")) — QuakeSpasm/vkQuake mogą go nie załadować.")
+            notes.append("This mod targets \(need.joined(separator: "/")) — QuakeSpasm/vkQuake may fail to load it.")
         }
         return notes.isEmpty ? nil : notes.joined(separator: " ")
     }

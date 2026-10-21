@@ -17,24 +17,24 @@ struct MapBrowserView: View {
         HSplitView {
             VStack(spacing: 8) {
                 HStack {
-                    TextField("Szukaj (tytuł, autor, id)…", text: $browser.searchText)
+                    TextField("Search (title, author, id)…", text: $browser.searchText)
                         .textFieldStyle(.roundedBorder)
                     Picker("", selection: $browser.kindFilter) {
                         ForEach(PackageKind.allCases) { Text($0.label).tag($0) }
                     }
                     .labelsHidden().frame(width: 130)
-                    .help("Baza Quaddicted zawiera nie tylko mapy — także mody, epizody i jamy.")
-                    Toggle("Zainstalowane", isOn: $browser.onlyInstalled)
+                    .help("The Quaddicted database has more than maps — mods, episodes and jams too.")
+                    Toggle("Installed", isOn: $browser.onlyInstalled)
                     Button {
                         Task { await browser.load(force: true) }
                     } label: { Image(systemName: "arrow.clockwise") }
-                        .help("Odśwież bazę z Quaddicted")
+                        .help("Refresh database from Quaddicted")
                         .disabled(browser.loading)
                 }
                 .padding([.top, .horizontal], 10)
 
                 Table(filtered, selection: $selectedID, sortOrder: $sortOrder) {
-                    TableColumn("Tytuł", value: \.title) { pkg in
+                    TableColumn("Title", value: \.title) { pkg in
                         HStack(spacing: 4) {
                             if browser.isInstalled(pkg, launcher: launcher) {
                                 Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
@@ -42,22 +42,22 @@ struct MapBrowserView: View {
                             Text(pkg.title.isEmpty ? pkg.id : pkg.title)
                         }
                     }
-                    TableColumn("Autor", value: \.author)
-                    TableColumn("Rodzaj", value: \.kindText) { Text($0.kindText) }.width(110)
-                    TableColumn("Data", value: \.sortDate) { Text($0.date) }.width(80)
-                    TableColumn("Pobrano", value: \.installedSort) { pkg in
+                    TableColumn("Author", value: \.author)
+                    TableColumn("Type", value: \.kindText) { Text($0.kindText) }.width(110)
+                    TableColumn("Released", value: \.sortDate) { Text($0.date) }.width(80)
+                    TableColumn("Downloaded", value: \.installedSort) { pkg in
                         Text(pkg.installedText)
                             .foregroundStyle(pkg.installedAt == nil ? .secondary : .primary)
                     }
                     .width(85)
-                    TableColumn("Ocena", value: \.rating) { Text($0.stars) }.width(70)
+                    TableColumn("Rating", value: \.rating) { Text($0.stars) }.width(70)
                 }
 
                 HStack {
                     if browser.loading { ProgressView().controlSize(.small) }
                     Text(browser.statusText).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                     Spacer()
-                    Text("\(filtered.count) z \(browser.packages.count)").font(.caption).foregroundStyle(.secondary)
+                    Text("\(filtered.count) of \(browser.packages.count)").font(.caption).foregroundStyle(.secondary)
                 }
                 .padding([.bottom, .horizontal], 10)
             }
@@ -68,7 +68,7 @@ struct MapBrowserView: View {
                     ?? browser.packages.first(where: { $0.id == selectedID }) {
                     PackageDetail(launcher: launcher, browser: browser, registry: registry, pkg: pkg)
                 } else {
-                    Text("Wybierz mapę z listy").foregroundStyle(.secondary)
+                    Text("Select a map from the list").foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }

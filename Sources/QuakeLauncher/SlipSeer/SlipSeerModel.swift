@@ -55,11 +55,11 @@ final class SlipSeerModel: ObservableObject {
         defer { loading = false }
         if !force, let cached = loadCache(), Date().timeIntervalSince(cached.date) < 24 * 3600 {
             resources = cached.items
-            statusText = "SlipSeer (cache): \(cached.items.count) pozycji."
+            statusText = "SlipSeer (cache): \(cached.items.count) items."
             return
         }
         do {
-            statusText = "Pobieram listę SlipSeer…"
+            statusText = "Downloading SlipSeer list…"
             var all: [SlipSeerResource] = []
             var seen = Set<String>()
             let firstHTML = try await html(Self.listURL)
@@ -67,7 +67,7 @@ final class SlipSeerModel: ObservableObject {
             for r in SlipSeerHTML.listing(firstHTML) where seen.insert(r.slug).inserted { all.append(r) }
             if pages > 1 {
                 for page in 2 ... pages {
-                    statusText = "Pobieram listę SlipSeer (\(page)/\(pages))…"
+                    statusText = "Downloading SlipSeer list (\(page)/\(pages))…"
                     let url = "https://www.slipseer.com/index.php?resources/&page=\(page)"
                     let page = try await html(url)
                     for r in SlipSeerHTML.listing(page) where seen.insert(r.slug).inserted { all.append(r) }
@@ -75,13 +75,13 @@ final class SlipSeerModel: ObservableObject {
             }
             resources = all
             saveCache(all)
-            statusText = "SlipSeer: \(all.count) pozycji."
+            statusText = "SlipSeer: \(all.count) items."
         } catch {
             if resources.isEmpty, let cached = loadCache() {
                 resources = cached.items
-                statusText = "Sieć padła — cache z \(cached.items.count) pozycjami."
+                statusText = "Network down — using cache with \(cached.items.count) items."
             } else {
-                statusText = "Nie udało się pobrać SlipSeer: \(error.localizedDescription)"
+                statusText = "Couldn't download SlipSeer: \(error.localizedDescription)"
             }
         }
     }
@@ -105,7 +105,7 @@ final class SlipSeerModel: ObservableObject {
 
     func install(_ res: SlipSeerResource, launcher: LauncherModel, registry: InstallRegistry) async {
         guard let base = launcher.baseDir else {
-            statusText = "Najpierw ustaw katalog Quake'a w oknie launchera."
+            statusText = "Set the Quake folder in the launcher window first."
             return
         }
         installing.insert(res.slug)
@@ -117,7 +117,7 @@ final class SlipSeerModel: ObservableObject {
             try? fm.removeItem(at: tempFile)
         }
         do {
-            statusText = "Pobieram \(res.title.isEmpty ? res.name : res.title)…"
+            statusText = "Downloading \(res.title.isEmpty ? res.name : res.title)…"
             var request = URLRequest(url: res.downloadURL)
             request.setValue(ModDBClient.userAgent, forHTTPHeaderField: "User-Agent")
             request.setValue("https://www.slipseer.com/", forHTTPHeaderField: "Referer")
@@ -130,11 +130,11 @@ final class SlipSeerModel: ObservableObject {
             // zasoby będące odsyłaczem oddają stronę WWW zamiast archiwum
             let type = (http?.value(forHTTPHeaderField: "Content-Type") ?? "").lowercased()
             if type.contains("text/html") {
-                statusText = "\(res.name) jest na SlipSeer tylko odsyłaczem do innej strony — pobierz ręcznie ze strony zasobu."
+                statusText = "\(res.name) is only a link to another site on SlipSeer — download it manually from the resource page."
                 return
             }
 
-            statusText = "Rozpakowuję…"
+            statusText = "Unpacking…"
             try fm.createDirectory(at: staging, withIntermediateDirectories: true)
             try PackageFS.extract(tempFile, to: staging)
             PackageFS.lowercaseNames(in: staging)
@@ -152,12 +152,12 @@ final class SlipSeerModel: ObservableObject {
             if launcher.mods.contains(actual) { launcher.selectedMod = actual }
 
             if PackageFS.looksLikeGameDir(target) {
-                statusText = "Zainstalowano \(res.title) → \(actual)/ (\(maps.count) map)."
+                statusText = "Installed \(res.title) → \(actual)/ (\(maps.count) \(maps.count == 1 ? "map" : "maps"))."
             } else {
-                statusText = "Rozpakowano do \(actual)/, ale to nie wygląda na katalog gry (brak pak/progs.dat/maps)."
+                statusText = "Unpacked to \(actual)/, but it doesn't look like a game directory (no pak/progs.dat/maps)."
             }
         } catch {
-            statusText = "Błąd instalacji \(res.name): \(error.localizedDescription)"
+            statusText = "Install failed for \(res.name): \(error.localizedDescription)"
         }
     }
 

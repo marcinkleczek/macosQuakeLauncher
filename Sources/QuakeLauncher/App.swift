@@ -21,7 +21,7 @@ struct QuakeLauncherApp: App {
         }
         .windowResizability(.contentSize)
 
-        Window("Mapy — Quaddicted", id: "maps") {
+        Window("Maps — Quaddicted", id: "maps") {
             MapBrowserView(launcher: model, browser: browser, registry: registry)
         }
 
@@ -33,7 +33,7 @@ struct QuakeLauncherApp: App {
             SlipSeerView(launcher: model, browser: slipseer, registry: registry)
         }
 
-        Window("Pobrane", id: "library") {
+        Window("Downloaded", id: "library") {
             LibraryView(launcher: model, registry: registry)
         }
     }

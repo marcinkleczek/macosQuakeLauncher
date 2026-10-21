@@ -8,7 +8,7 @@ struct ContentView: View {
     @Environment(\.openWindow) private var openWindow
 
     static let modLabels = [
-        "id1": "id1 (bez moda)",
+        "id1": "id1 (no mod)",
         "hipnotic": "hipnotic (Scourge of Armagon)",
         "rogue": "rogue (Dissolution of Eternity)",
     ]
@@ -27,11 +27,11 @@ struct ContentView: View {
 
     private var setupView: some View {
         VStack(spacing: 12) {
-            Text("Wskaż katalog Quake'a").font(.title2)
-            Text("Katalog, w którym znajduje się podkatalog id1 (z pak0.pak) oraz katalogi modów.")
+            Text("Choose the Quake folder").font(.title2)
+            Text("The folder that contains the id1 subfolder (with pak0.pak) and your mod folders.")
                 .font(.callout).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Button("Wybierz katalog…") { pickBaseDir() }
+            Button("Choose folder…") { pickBaseDir() }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 30)
@@ -41,7 +41,7 @@ struct ContentView: View {
         Group {
             Grid(alignment: .leading, verticalSpacing: 10) {
                 GridRow {
-                    Text("Silnik:")
+                    Text("Engine:")
                     HStack {
                         Picker("", selection: $model.selectedEngine) {
                             ForEach(model.engines) { engine in
@@ -50,7 +50,7 @@ struct ContentView: View {
                         }
                         .labelsHidden()
                         Button("…") { pickEngine() }
-                            .help("Dodaj inny silnik (aplikację lub binarkę)")
+                            .help("Add another engine (app or binary)")
                     }
                 }
                 GridRow {
@@ -63,17 +63,17 @@ struct ContentView: View {
                     .labelsHidden()
                 }
                 GridRow {
-                    Text("Mapa:")
+                    Text("Map:")
                     Picker("", selection: $model.selectedMap) {
-                        Text("(menu główne)").tag("")
+                        Text("(main menu)").tag("")
                         ForEach(model.maps, id: \.self) { Text($0).tag($0) }
                     }
                     .labelsHidden()
                 }
                 GridRow {
-                    Text("Monitor:")
+                    Text("Display:")
                     Picker("", selection: $model.selectedDisplay) {
-                        Text("Domyślny").tag(Optional<DisplayOption>.none)
+                        Text("Default").tag(Optional<DisplayOption>.none)
                         ForEach(model.displays) { display in
                             Text(display.name).tag(Optional(display))
                         }
@@ -82,13 +82,13 @@ struct ContentView: View {
                 }
                 GridRow {
                     Text("")
-                    Toggle("Pełny ekran", isOn: $model.fullscreen)
+                    Toggle("Fullscreen", isOn: $model.fullscreen)
                         .toggleStyle(.checkbox)
                 }
                 GridRow {
                     Text("Skill:")
                     Picker("", selection: $model.skill) {
-                        Text("Domyślny").tag(-1)
+                        Text("Default").tag(-1)
                         Text("Easy").tag(0)
                         Text("Normal").tag(1)
                         Text("Hard").tag(2)
@@ -98,8 +98,8 @@ struct ContentView: View {
                     .labelsHidden()
                 }
                 GridRow {
-                    Text("Parametry:")
-                    TextField("np. -width 2560", text: $model.params)
+                    Text("Extra arguments:")
+                    TextField("e.g. -width 2560", text: $model.params)
                 }
             }
 
@@ -107,19 +107,19 @@ struct ContentView: View {
             // o szerokości 420 i etykiety obcinały się do „Mapy onli…”.
             VStack(alignment: .leading, spacing: 8) {
                 HStack(spacing: 8) {
-                    Text("Pobieraj z:")
+                    Text("Download from:")
                         .font(.caption).foregroundStyle(.secondary)
                     Button("Quaddicted") { openWindow(id: "maps") }
                     Button("SlipSeer") { openWindow(id: "slipseer") }
                     Button("ModDB") { openWindow(id: "moddb") }
                     Spacer()
-                    Button("Pobrane") { openWindow(id: "library") }
-                        .help("Wszystko, co pobrałeś — ze wszystkich źródeł, z datami.")
+                    Button("Downloaded") { openWindow(id: "library") }
+                        .help("Everything you've downloaded — from all sources, with dates.")
                 }
 
                 HStack(spacing: 8) {
-                    Button("Zmień katalog…") { pickBaseDir() }
-                    Button("Odśwież") { model.rescan() }
+                    Button("Change folder…") { pickBaseDir() }
+                    Button("Refresh") { model.rescan() }
                     Spacer()
                     Button("Launch ▶") { model.launch() }
                         .keyboardShortcut(.defaultAction)
@@ -140,7 +140,7 @@ struct ContentView: View {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
-        panel.message = "Wybierz katalog Quake'a (zawierający id1)"
+        panel.message = "Choose the Quake folder (containing id1)"
         if panel.runModal() == .OK, let url = panel.url {
             model.setBaseDir(url)
         }
@@ -151,7 +151,7 @@ struct ContentView: View {
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
         panel.treatsFilePackagesAsDirectories = false
-        panel.message = "Wybierz aplikację (.app) lub binarkę silnika Quake"
+        panel.message = "Choose a Quake engine app (.app) or binary"
         if panel.runModal() == .OK, let url = panel.url {
             model.addCustomEngine(url)
         }
