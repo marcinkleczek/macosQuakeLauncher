@@ -280,14 +280,26 @@ enum PackageFS {
         return root
     }
 
+    /// Mapy paczki: luźne .bsp oraz maps/*.bsp wewnątrz paków. Stare mody (np. Nike)
+    /// trzymają wszystkie mapy w pak0.pak — bez tego „Graj" startował bez +map, na demach id1.
     static func bspNames(in dir: URL) -> [String] {
-        var names: [String] = []
+        var names: Set<String> = []
         guard let walker = fm.enumerator(at: dir, includingPropertiesForKeys: nil) else { return [] }
-        for case let f as URL in walker.allObjects where f.pathExtension.lowercased() == "bsp" {
-            let name = f.deletingPathExtension().lastPathComponent.lowercased()
-            if !name.hasPrefix("b_") { names.append(name) }
+        for case let f as URL in walker.allObjects {
+            switch f.pathExtension.lowercased() {
+            case "bsp":
+                names.insert(f.deletingPathExtension().lastPathComponent.lowercased())
+            case "pak":
+                for entry in BSPReader.pakEntries(f).keys {
+                    let lower = entry.lowercased()
+                    guard lower.hasPrefix("maps/"), lower.hasSuffix(".bsp"),
+                          !lower.dropFirst(5).contains("/") else { continue }
+                    names.insert(String(lower.dropFirst(5).dropLast(4)))
+                }
+            default: break
+            }
         }
-        return names.sorted()
+        return names.filter { !$0.hasPrefix("b_") }.sorted()
     }
 
     // MARK: Archiwa

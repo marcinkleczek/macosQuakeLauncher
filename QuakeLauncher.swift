@@ -1055,14 +1055,26 @@ final class BrowserModel: ObservableObject {
                     .map { $0.source.file.deletingLastPathComponent().deletingLastPathComponent() }
                     .map { $0.lastPathComponent }
             }
-            guard needsMod || resolved != nil else { continue }
+            // Dawny instalator nie zaglądał do paków, więc paczki z mapami tylko w pak0.pak
+            // nie mają spisu map. Skanujemy wyłącznie katalog nazwany jak paczka — wspólny
+            // katalog moda (quoth/, gadgets/) zawiera też mapy innych paczek.
+            var maps: [String] = []
+            if availableMaps(pkg).isEmpty, entry.maps.isEmpty,
+               let dir = resolved ?? known, dir.lowercased() == pkg.id.lowercased() {
+                maps = PackageFS.bspNames(in: base.appendingPathComponent(dir))
+                if !maps.isEmpty { packageMaps[pkg.id] = maps }
+            }
+            guard needsMod || resolved != nil || !maps.isEmpty else { continue }
             registry.record(source: .quaddicted, slug: pkg.id,
                             title: entry.title.isEmpty ? pkg.title : entry.title,
-                            gameDir: resolved, maps: [], base: nil,
+                            gameDir: resolved, maps: maps, base: nil,
                             requiresMod: needsMod ? pkg.requiredMod : nil)
             touched += 1
         }
-        if touched > 0 { registry.save(base: base) }
+        if touched > 0 {
+            registry.save(base: base)
+            UserDefaults.standard.set(packageMaps, forKey: "packageMaps")
+        }
     }
 
     // MARK: Instalacja
@@ -1159,13 +1171,7 @@ final class BrowserModel: ObservableObject {
             }
 
             // spisz mapy paczki, żeby "Graj" działał także bez <startmap> w bazie
-            var bspNames: [String] = []
-            if let walker = fm.enumerator(at: root, includingPropertiesForKeys: nil) {
-                for case let f as URL in walker.allObjects where f.pathExtension.lowercased() == "bsp" {
-                    let name = f.deletingPathExtension().lastPathComponent
-                    if !name.lowercased().hasPrefix("b_") { bspNames.append(name) }
-                }
-            }
+            let bspNames = PackageFS.bspNames(in: root)
 
             let target: URL
             if let rel, !rel.isEmpty {
