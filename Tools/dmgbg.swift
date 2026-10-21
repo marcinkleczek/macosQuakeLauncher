@@ -1,4 +1,5 @@
 // Generator tła okna DMG (660×440 pkt, wersje 1x i 2x) — motyw spójny z ikonami.
+// Okno Findera w build.sh jest o 32 pkt wyższe: jego granice obejmują pasek tytułu.
 // Użycie: swift dmgbg.swift <katalog-wyjściowy>  → background.png, background@2x.png
 import CoreGraphics
 import CoreText
@@ -36,28 +37,6 @@ func render(scale: CGFloat, to url: URL) {
                            startCenter: CGPoint(x: W / 2, y: flipY(90)), startRadius: 0,
                            endCenter: CGPoint(x: W / 2, y: flipY(90)), endRadius: 420, options: [])
 
-    // znak wodny: pierścień + gwóźdź, ledwo widoczny, za układem ikon
-    let cx: CGFloat = 330, cy: CGFloat = 215
-    let rOut: CGFloat = 168, rIn: CGFloat = 116
-    let mark = CGMutablePath()
-    mark.addEllipse(in: CGRect(x: cx - rOut, y: flipY(cy + rOut), width: rOut * 2, height: rOut * 2))
-    mark.addEllipse(in: CGRect(x: cx - rIn, y: flipY(cy + rIn), width: rIn * 2, height: rIn * 2))
-    ctx.saveGState()
-    ctx.addPath(mark)
-    ctx.setFillColor(rgb(0xC89552, 0.07))
-    ctx.fillPath(using: .evenOdd)
-    let nail = CGMutablePath()
-    nail.move(to: CGPoint(x: cx - 58, y: flipY(cy - 140)))
-    nail.addLine(to: CGPoint(x: cx + 58, y: flipY(cy - 140)))
-    nail.addLine(to: CGPoint(x: cx + 32, y: flipY(cy - 92)))
-    nail.addLine(to: CGPoint(x: cx, y: flipY(cy + 230)))
-    nail.addLine(to: CGPoint(x: cx - 32, y: flipY(cy - 92)))
-    nail.closeSubpath()
-    ctx.addPath(nail)
-    ctx.setFillColor(rgb(0xC89552, 0.07))
-    ctx.fillPath()
-    ctx.restoreGState()
-
     // strzałka: od aplikacji do Applications
     let ay = flipY(222)
     let arrow = CGMutablePath()
@@ -94,6 +73,21 @@ func render(scale: CGFloat, to url: URL) {
              size: 19, color: rgb(0xD9A85E, 0.9), kern: 7, weight: "Medium")
     drawText("Drag the apps to the Applications folder", centerX: W / 2, baselineY: flipY(416),
              size: 13, color: rgb(0xB08A55, 0.9), kern: 0.4, weight: "Regular")
+
+    // Białe nazwy pod ikonami. Finder nie pozwala zmienić koloru etykiet — w jasnym motywie
+    // rysuje je na czarno, czyli niewidocznie na ciemnym tle. Nasze leżą dokładnie pod
+    // etykietami Findera (linia bazowa 72 pt pod środkiem ikony, systemowy font 13 pt),
+    // więc czarne litery dostają jasną obwódkę, a w ciemnym motywie biel nakłada się na biel.
+    // Pozycje ikon muszą się zgadzać z "set position of item" w build.sh.
+    let systemFont = CTFontCreateUIFontForLanguage(.system, 13, nil)!
+    for (name, x, y) in [("QuakeLauncher", 160.0, 130.0), ("QuakeConfig", 160.0, 315.0), ("Applications", 505.0, 222.0)] {
+        let attrs = [kCTFontAttributeName: systemFont,
+                     kCTForegroundColorAttributeName: rgb(0xFFFFFF)] as CFDictionary
+        let line = CTLineCreateWithAttributedString(CFAttributedStringCreate(nil, name as CFString, attrs)!)
+        let width = CTLineGetTypographicBounds(line, nil, nil, nil)
+        ctx.textPosition = CGPoint(x: x - width / 2, y: flipY(y + 72))
+        CTLineDraw(line, ctx)
+    }
 
     let image = ctx.makeImage()!
     let dest = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil)!
