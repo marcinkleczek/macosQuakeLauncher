@@ -10,14 +10,14 @@ cd "$(dirname "$0")"
 
 NOTARY_PROFILE="${NOTARY_PROFILE:-quaketools}"
 
-# preferuj Developer ID > Apple Development > ad-hoc
+# preferuj Developer ID > Apple Development > ad-hoc (pierwsza pasująca tożsamość z pęku kluczy)
 if [[ -z "$SIGN_ID" ]]; then
-  SIGN_ID=$(security find-identity -v -p codesigning | grep -oE '"Developer ID Application: [^"]*"' | head -1 | tr -d '"')
+  for kind in "Developer ID Application" "Apple Development"; do
+    SIGN_ID=$(security find-identity -v -p codesigning | grep -oE "\"$kind: [^\"]*\"" | head -1 | tr -d '"')
+    [[ -n "$SIGN_ID" ]] && break
+  done
 fi
-if [[ -z "$SIGN_ID" ]]; then
-  SIGN_ID="Apple Development: marcin.kleczek@gmail.com (5D5BZP98TC)"
-  security find-identity -v -p codesigning | grep -qF "$SIGN_ID" || SIGN_ID="-"
-fi
+SIGN_ID="${SIGN_ID:--}"
 
 # hardened runtime + znacznik czasu są wymagane do notaryzacji (nie działają z ad-hoc)
 SIGN_FLAGS=()
