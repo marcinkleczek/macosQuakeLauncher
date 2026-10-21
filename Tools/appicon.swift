@@ -10,7 +10,7 @@ let args = CommandLine.arguments
 guard args.count == 3,
       let source = CGImageSourceCreateWithURL(URL(fileURLWithPath: args[1]) as CFURL, nil),
       let art = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
-    print("Użycie: swift Tools/appicon.swift <grafika.jpg> <wyjście.icns>")
+    print("Usage: swift Tools/appicon.swift <artwork.jpg> <output.icns>")
     exit(1)
 }
 let output = URL(fileURLWithPath: args[2])
@@ -55,5 +55,5 @@ iconutil.arguments = ["-c", "icns", iconset.path, "-o", output.path]
 try iconutil.run()
 iconutil.waitUntilExit()
 try? FileManager.default.removeItem(at: iconset)
-print(iconutil.terminationStatus == 0 ? "OK: \(output.path)" : "iconutil: błąd \(iconutil.terminationStatus)")
+print(iconutil.terminationStatus == 0 ? "OK: \(output.path)" : "iconutil failed: \(iconutil.terminationStatus)")
 exit(iconutil.terminationStatus)

@@ -50,7 +50,7 @@ clang -arch arm64 -arch x86_64 -dynamiclib -undefined dynamic_lookup -O2 \
 codesign --force --sign "$SIGN_ID" "${SIGN_FLAGS[@]}" QuakeLauncher.app/Contents/Resources/libdisplayshim.dylib
 codesign --force --sign "$SIGN_ID" "${SIGN_FLAGS[@]}" QuakeLauncher.app
 codesign --force --sign "$SIGN_ID" "${SIGN_FLAGS[@]}" QuakeConfig.app
-echo "Gotowe (podpis: $SIGN_ID): QuakeLauncher.app, QuakeConfig.app"
+echo "Done (signed with: $SIGN_ID): QuakeLauncher.app, QuakeConfig.app"
 
 if [[ "$1" == "dist" ]]; then
   VOLNAME="Quake Tools"
@@ -111,23 +111,23 @@ OSA
   hdiutil convert tmp-rw.dmg -format UDZO -quiet -o QuakeTools.dmg
   rm -f tmp-rw.dmg
   codesign --force --sign "$SIGN_ID" QuakeTools.dmg 2>/dev/null || true
-  echo "Gotowe: QuakeTools.dmg"
+  echo "Done: QuakeTools.dmg"
 
   if [[ "$SIGN_ID" == Developer\ ID* ]]; then
-    echo "Wysyłam do notaryzacji (profil: $NOTARY_PROFILE)…"
+    echo "Submitting for notarization (profile: $NOTARY_PROFILE)…"
     SUB_ID=$(xcrun notarytool submit QuakeTools.dmg --keychain-profile "$NOTARY_PROFILE" 2>&1 | awk '/^  id:/{print $2; exit}')
-    [[ -z "$SUB_ID" ]] && { echo "⚠︎ submit nie zwrócił id submisji"; exit 1; }
-    echo "Submisja: $SUB_ID — czekam na werdykt Apple…"
+    [[ -z "$SUB_ID" ]] && { echo "⚠︎ notarytool submit returned no submission id"; exit 1; }
+    echo "Submission: $SUB_ID — waiting for Apple…"
     while true; do
       STATUS=$(xcrun notarytool info "$SUB_ID" --keychain-profile "$NOTARY_PROFILE" 2>/dev/null | awk '/status:/{sub(/^ *status: */,""); print; exit}')
-      echo "  $(date +%H:%M:%S) status: ${STATUS:-(brak odpowiedzi)}"
+      echo "  $(date +%H:%M:%S) status: ${STATUS:-(no response)}"
       case "$STATUS" in
         Accepted)
           xcrun stapler staple QuakeTools.dmg
-          echo "Notaryzacja + stapling OK — DMG gotowy do dystrybucji."
+          echo "Notarized and stapled — DMG ready for distribution."
           break;;
         Invalid|Rejected)
-          echo "⚠︎ Notaryzacja odrzucona — log:"
+          echo "⚠︎ Notarization rejected — log:"
           xcrun notarytool log "$SUB_ID" --keychain-profile "$NOTARY_PROFILE"
           exit 1;;
       esac
